@@ -33,13 +33,13 @@ def main():
             elif user_choice == "4":
                 system.handle_withdraw()
             elif user_choice == "5":
-                system.transfer()
+                system.handle_transfer()
             elif user_choice == "6":
                 system.handle_view_balance()
             elif user_choice == "7":
                 system.handle_view_transaction_history()
             elif user_choice == "8":
-                system.apply_interest()
+                system.handle_apply_interest()
             elif user_choice == "9":
                 system.handle_close_account()
             elif user_choice == "10":

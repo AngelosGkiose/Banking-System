@@ -12,18 +12,34 @@ class BankSystem:
        self.database=Database()
 
     @staticmethod
-    def get_user_input():
+    def get_customer_name():
         while True:
-            customer_name=input("Please enter your customer name: ").strip()
-            customer_email = input("Please enter your customer email: ").strip()
+            customer_name = input(
+                "Please enter your customer name: "
+            ).strip()
+
             if not customer_name:
-                print("Please enter a customer name")
+                print("Please enter a customer name.")
                 continue
+
+            return customer_name
+
+    @staticmethod
+    def get_customer_email():
+        while True:
+            customer_email = input(
+                "Please enter your customer email: "
+            ).strip().lower()
+
             if not customer_email:
-                print("Please enter a customer email")
+                print("Please enter a customer email.")
                 continue
-            break
-        return customer_name,customer_email
+
+            if "@" not in customer_email or "." not in customer_email:
+                print("Please enter a valid email address.")
+                continue
+
+            return customer_email
 
     def get_account(self, message="Please enter your account number: "):
         while True:
@@ -71,7 +87,8 @@ class BankSystem:
 
 
     def handle_create_account(self):
-        customer_name,customer_email = self.get_user_input()
+        customer_name = self.get_customer_name()
+        customer_email = self.get_customer_email()
         customer=self.database.get_customer_by_email(customer_email)
         if customer is None:
             customer=Customer(customer_name,customer_email)
@@ -133,7 +150,7 @@ class BankSystem:
     def handle_withdraw(self):
         account = self.get_account()
         amount = self.get_amount(
-            "Please enter your withdrawal  amount: "
+            "Please enter your withdrawal amount: "
         )
         withdrawn = account.withdraw(amount)
         if not withdrawn:
@@ -156,7 +173,7 @@ class BankSystem:
         else:
             print("Withdrawal could not be completed.")
 
-    def transfer(self):
+    def handle_transfer(self):
         source_account = self.get_account(
             "Please enter source account number: "
         )
@@ -190,7 +207,7 @@ class BankSystem:
             type="transfer_in",
             amount=amount,
             date=date.today().isoformat(),
-            description=f"Transfer in from {source_account.account_number}  "
+            description=f"Transfer from {source_account.account_number}  "
         )
         completed = self.database.transfer_between_accounts(source_account,destination_account,transfer_in,transfer_out)
         if completed:
@@ -221,7 +238,7 @@ class BankSystem:
         for transaction in transaction_history:
             print(transaction)
 
-    def apply_interest(self):
+    def handle_apply_interest(self):
         account = self.get_account()
         if account.account_type == "checking":
             print("No interest in checking account.")
@@ -230,8 +247,13 @@ class BankSystem:
         if interest_amount<=0:
             print("Insufficient balance.")
             return
-        transaction=Transaction(account.account_id,type="interest",amount=interest_amount,
-                                date=date.today().isoformat(),description="Applying interest")
+        transaction = Transaction(
+            account_id=account.account_id,
+            type="interest",
+            amount=interest_amount,
+            date=date.today().isoformat(),
+            description="Interest applied"
+        )
         completed=self.database.update_balance_and_add_transaction(account,transaction)
         if completed:
             print("Interest applied successfully.")
