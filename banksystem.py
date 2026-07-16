@@ -25,6 +25,50 @@ class BankSystem:
             break
         return customer_name,customer_email
 
+    def get_account(self, message="Please enter your account number: "):
+        while True:
+            account_number = input(message).strip().upper()
+
+            if not account_number:
+                print("Please enter an account number.")
+                continue
+
+            account = self.database.get_account_by_account_number(account_number)
+
+            if account is None:
+                print("Account was not found.")
+                continue
+
+            return account
+
+    @staticmethod
+    def get_amount( message):
+        while True:
+            try:
+                amount = float(input(message).strip())
+
+                if amount <= 0:
+                    print("Please enter a positive amount.")
+                    continue
+
+                return amount
+
+            except ValueError:
+                print("Please enter a numeric value.")
+
+    @staticmethod
+    def get_confirmation( message):
+        while True:
+            confirmation = input(message).strip().lower()
+
+            if confirmation == "yes":
+                return True
+
+            if confirmation == "no":
+                return False
+
+            print("Please enter yes or no.")
+
 
     def handle_create_account(self):
         customer_name,customer_email = self.get_user_input()
@@ -35,10 +79,12 @@ class BankSystem:
             if not customer_created:
                 print("Customer could not be created!")
                 return
-        account_type = input("Please enter your account type(savings/checking): ").strip().lower()
-        if not account_type or account_type not in ["savings", "checking"]:
-            print("Please enter your account type: ")
-            return
+        while True:
+            account_type = input("Please enter your account type(savings/checking): ").strip().lower()
+            if not account_type or account_type not in ["savings", "checking"]:
+                print("Please enter your account type: ")
+                continue
+            break
         if account_type == "savings":
             account = SavingsAccount(customer_id=customer.customer_id)
         else:
@@ -62,22 +108,10 @@ class BankSystem:
             print(account)
 
     def handle_deposit(self):
-        account_number=input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter a account number.")
-            return
-        account=self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
-        try:
-            amount=float(input("Please enter your deposit amount: "))
-            if amount<=0:
-                print("Please enter a positive amount.")
-                return
-        except ValueError:
-            print("Please enter a integer value.")
-            return
+        account = self.get_account()
+        amount = self.get_amount(
+            "Please enter your deposit amount: "
+        )
         deposited = account.deposit(amount)
         if not deposited:
             print("Deposit could not be completed.")
@@ -97,22 +131,10 @@ class BankSystem:
             print("Deposit could not be completed.")
 
     def handle_withdraw(self):
-        account_number = input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter a account number.")
-            return
-        account = self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
-        try:
-            amount=float(input("Please enter your withdraw amount: "))
-            if amount<=0:
-                print("Please enter a positive amount.")
-                return
-        except ValueError:
-            print("Please enter a integer value.")
-            return
+        account = self.get_account()
+        amount = self.get_amount(
+            "Please enter your withdrawal  amount: "
+        )
         withdrawn = account.withdraw(amount)
         if not withdrawn:
             print("Insufficient balance.")
@@ -135,33 +157,20 @@ class BankSystem:
             print("Withdrawal could not be completed.")
 
     def transfer(self):
-        source_account_number=input("Please enter source account number: ").strip().upper()
-        if not source_account_number:
-            print("Please enter a account number.")
-            return
-        source_account = self.database.get_account_by_account_number(source_account_number)
-        if not source_account:
-            print("Account was not found.")
-            return
-        destination_account_number=input("Please enter destination account number: ").strip().upper()
-        if not destination_account_number:
-            print("Please enter a account number.")
-            return
-        destination_account = self.database.get_account_by_account_number(destination_account_number)
-        if not destination_account:
-            print("Account was not found.")
-            return
-        if source_account.account_number == destination_account.account_number:
-            print("Accounts cannot be the same.")
-            return
-        try:
-            amount=float(input("Please enter your transfer amount: "))
-            if amount<=0:
-                print("Please enter a positive amount.")
-                return
-        except ValueError:
-            print("Please enter a numeric value.")
-            return
+        source_account = self.get_account(
+            "Please enter source account number: "
+        )
+        while True:
+            destination_account = self.get_account(
+                "Please enter destination account number: "
+            )
+            if source_account.account_number == destination_account.account_number:
+                print("Accounts cannot be the same.")
+                continue
+            break
+        amount = self.get_amount(
+            "Please enter your transfer amount: "
+        )
         withdrawn=source_account.withdraw(amount)
         if not withdrawn:
             print("Insufficient balance.")
@@ -198,43 +207,22 @@ class BankSystem:
             print("Transfer could not be completed.")
 
     def handle_view_balance(self):
-        account_number = input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter an account number.")
-            return
-        account = self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
+        account = self.get_account()
         print(account)
 
     def handle_view_transaction_history(self):
-        account_number = input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter an account number.")
-            return
-        account = self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
+        account = self.get_account()
         transaction_history = self.database.get_transactions_by_account_id(account)
-        if transaction_history:
-            print("\n===== Transaction History =====")
-            print(f"Account Number: {account.account_number}\n")
-            for transaction in transaction_history:
-                print(transaction)
-        else:
-            print("Transactions could not be found.")
+        if not transaction_history:
+            print("No transactions found.")
+            return
+        print("\n===== Transaction History =====")
+        print(f"Account Number: {account.account_number}\n")
+        for transaction in transaction_history:
+            print(transaction)
 
     def apply_interest(self):
-        account_number = input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter an account number.")
-            return
-        account = self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
+        account = self.get_account()
         if account.account_type == "checking":
             print("No interest in checking account.")
             return
@@ -253,34 +241,24 @@ class BankSystem:
             print("Interest could not be applied.")
 
     def handle_close_account(self):
-        account_number = input("Please enter your account number: ").strip().upper()
-        if not account_number:
-            print("Please enter an account number.")
-            return
-        account = self.database.get_account_by_account_number(account_number)
-        if not account:
-            print("Account was not found.")
-            return
-        if account.balance ==0:
-            confirmation = input(
-                f"Are you sure you want to close this account({account.account_number})? (yes/no) "
-            ).strip().lower()
-            if confirmation=="no":
-                print("Deletion cancelled.")
-                return
-            if confirmation != "yes":
-                print("Please enter yes or no.")
-                return
-            completed= self.database.close_account(account)
-            if completed:
-                print("Close account successfully.")
-            else:
-                print("Account could not be closed.")
-        else:
+        account = self.get_account()
+        if account.balance != 0:
             print("The account cannot be closed.")
             print("The account balance must be €0.00.")
             print(f"Current balance: €{account.balance:.2f}")
             return
+        confirmed = self.get_confirmation(
+            f"Are you sure you want to close this account "
+            f"({account.account_number})? (yes/no): "
+        )
+        if not confirmed:
+            print("Deletion cancelled.")
+            return
+        completed= self.database.close_account(account)
+        if completed:
+            print("Account closed successfully.")
+        else:
+            print("Account could not be closed.")
 
     def close(self):
         self.database.close_connection()
