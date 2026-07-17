@@ -17,18 +17,20 @@ class Account:
         )
 
     def deposit(self, amount):
+        if self.status != "active":
+            return False
         if amount <= 0:
             return False
         self.balance += amount
         return True
 
     def withdraw(self, amount):
+        if self.status != "active":
+            return False
         if amount <= 0:
             return False
-
         if amount > self.balance:
             return False
-
         self.balance -= amount
         return True
 

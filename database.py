@@ -283,13 +283,19 @@ class Database:
                 UPDATE accounts
                 SET status = ?
                 WHERE id = ?
-            """, (account.status, account.account_id))
-
+                  AND status = 'active'
+            """, (
+                account.status,
+                account.account_id
+            ))
+            if self.cursor.rowcount != 1:
+                self.connection.rollback()
+                return False
             self.connection.commit()
             return True
-
-        except sqlite3.Error:
+        except sqlite3.Error as error:
             self.connection.rollback()
+            print(f"Database error: {error}")
             return False
 
 

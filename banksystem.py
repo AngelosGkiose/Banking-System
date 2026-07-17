@@ -274,7 +274,10 @@ class BankSystem:
             print("Interest could not be applied.")
 
     def handle_close_account(self):
-        account = self.get_account()
+        account = self.get_account(
+            message="Please enter your account number: ",
+            allow_closed=True
+        )
         if account.balance != 0:
             print("The account cannot be closed.")
             print("The account balance must be €0.00.")
@@ -295,6 +298,7 @@ class BankSystem:
         if completed:
             print("Account closed successfully.")
         else:
+            account.status = "active"
             print("Account could not be closed.")
 
     def close(self):

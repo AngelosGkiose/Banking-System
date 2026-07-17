@@ -17,11 +17,11 @@ class CheckingAccount(Account):
         )
 
     def withdraw(self, amount):
+        if self.status != "active":
+            return False
         if amount <= 0:
             return False
-
         if amount > self.balance + self.overdraft_limit:
             return False
-
         self.balance -= amount
         return True

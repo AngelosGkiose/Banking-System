@@ -17,10 +17,10 @@ class SavingsAccount(Account):
         )
 
     def apply_interest(self):
+        if self.status != "active":
+            return 0
         interest_amount = self.balance * self.interest_rate
-
         if interest_amount <= 0:
             return 0
-
         self.balance += interest_amount
         return interest_amount
