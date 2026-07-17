@@ -43,6 +43,8 @@ class Database:
                 balance REAL NOT NULL DEFAULT 0,
                 account_type TEXT NOT NULL
                     CHECK (account_type IN ('savings', 'checking')),
+                status TEXT NOT NULL DEFAULT 'active'
+                CHECK (status IN ('active', 'closed')),
                 FOREIGN KEY (customer_id)
                     REFERENCES customers(id)
                     ON DELETE CASCADE,
@@ -169,7 +171,7 @@ class Database:
 
     def get_all_accounts(self):
         self.cursor.execute("""Select accounts.id,accounts.customer_id,accounts.account_number,accounts.balance,accounts.account_type,savings_accounts.interest_rate,
-            checking_accounts.overdraft_limit from accounts left join savings_accounts on accounts.id = savings_accounts.account_id 
+            checking_accounts.overdraft_limit,accounts.status from accounts left join savings_accounts on accounts.id = savings_accounts.account_id 
             left join checking_accounts on accounts.id = checking_accounts.account_id  ORDER BY accounts.id""")
         rows = self.cursor.fetchall()
         accounts = []
@@ -181,10 +183,11 @@ class Database:
             account_type = row[4]
             interest_rate = row[5]
             overdraft_limit = row[6]
+            status = row[7]
             if account_type == "savings":
-                account=SavingsAccount(customer_id,balance,account_id,account_number,interest_rate)
+                account=SavingsAccount(customer_id,balance,account_id,account_number,interest_rate,status)
             else:
-                account=CheckingAccount(customer_id,balance,account_id,account_number,overdraft_limit)
+                account=CheckingAccount(customer_id,balance,account_id,account_number,overdraft_limit,status)
             accounts.append(account)
         return accounts
 
@@ -198,18 +201,19 @@ class Database:
         account_number = account[2]
         balance = account[3]
         account_type = account[4]
+        status=account[5]
         if account_type == "savings":
             self.cursor.execute("""Select * from savings_accounts  where account_id = ?""",(account_id,))
             row = self.cursor.fetchone()
             if row is None:
                 return None
-            return SavingsAccount(customer_id,balance,account_id,account_number,row[1])
+            return SavingsAccount(customer_id,balance,account_id,account_number,row[1],status)
         elif account_type == "checking":
             self.cursor.execute("""Select * from checking_accounts  where account_id = ?""",(account_id,))
             row = self.cursor.fetchone()
             if row is None:
                 return None
-            return CheckingAccount(customer_id,balance,account_id,account_number,row[1])
+            return CheckingAccount(customer_id,balance,account_id,account_number,row[1],status)
         return None
 
     def update_balance_and_add_transaction(self, account, transaction):
@@ -276,20 +280,16 @@ class Database:
     def close_account(self, account):
         try:
             self.cursor.execute("""
-                DELETE FROM accounts
-                WHERE account_number = ?
-            """, (account.account_number,))
-
-            if self.cursor.rowcount != 1:
-                self.connection.rollback()
-                return False
+                UPDATE accounts
+                SET status = ?
+                WHERE id = ?
+            """, (account.status, account.account_id))
 
             self.connection.commit()
             return True
 
-        except sqlite3.Error as error:
+        except sqlite3.Error:
             self.connection.rollback()
-            print(f"Database error: {error}")
             return False
 
 

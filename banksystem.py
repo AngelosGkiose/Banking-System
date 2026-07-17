@@ -1,5 +1,6 @@
 from datetime import date
 
+
 from transaction import Transaction
 from checkingaccount import CheckingAccount
 from customer import Customer
@@ -41,7 +42,7 @@ class BankSystem:
 
             return customer_email
 
-    def get_account(self, message="Please enter your account number: "):
+    def get_account(self, message="Please enter your account number: ",allow_closed=False):
         while True:
             account_number = input(message).strip().upper()
 
@@ -53,6 +54,10 @@ class BankSystem:
 
             if account is None:
                 print("Account was not found.")
+                continue
+
+            if account.status == "closed" and not allow_closed:
+                print("This account is closed and cannot be used.")
                 continue
 
             return account
@@ -228,13 +233,19 @@ class BankSystem:
         print(account)
 
     def handle_view_transaction_history(self):
-        account = self.get_account()
-        transaction_history = self.database.get_transactions_by_account_id(account)
+        account = self.get_account(
+            message="Please enter your account number: ",
+            allow_closed=True
+        )
+        transaction_history = (
+            self.database.get_transactions_by_account_id(account)
+        )
         if not transaction_history:
             print("No transactions found.")
             return
         print("\n===== Transaction History =====")
-        print(f"Account Number: {account.account_number}\n")
+        print(f"Account Number: {account.account_number}")
+        print(f"Account Status: {account.status.capitalize()}\n")
         for transaction in transaction_history:
             print(transaction)
 
@@ -275,6 +286,10 @@ class BankSystem:
         )
         if not confirmed:
             print("Deletion cancelled.")
+            return
+        closed=account.disable_account()
+        if not closed:
+            print("Account is already closed.")
             return
         completed= self.database.close_account(account)
         if completed:
